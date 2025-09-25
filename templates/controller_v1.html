@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tennis Ball Machine Controller</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+  <style>
+    /* Reuse your existing styles here */
+    body { font-family: 'Courier New', monospace; background: #1e1e1e; color: #00ff00; max-width: 800px; margin: 20px auto; padding: 20px; }
+    .container { background: #000; padding: 20px; border-radius: 8px; border: 2px solid #333; }
+    h1 { text-align: center; color: #00ff00; text-shadow: 0 0 10px #00ff00; margin-bottom: 20px; }
+    .status { text-align: center; padding: 10px; border-radius: 5px; margin-bottom: 20px; font-weight: bold; }
+    .status.connected { background-color: #003300; color: #00ff00; border: 1px solid #00ff00; }
+    .status.disconnected { background-color: #330000; color: #ff0000; border: 1px solid #ff0000; }
+    .monitor { background-color: #000; border: 2px solid #333; border-radius: 5px; height: 350px; overflow-y: auto; padding: 15px; font-size: 14px; line-height: 1.4; }
+    .controls, .motor-controls { margin-top: 15px; text-align: center; }
+    .motor-controls input { width: 60px; padding: 5px; background: #222; color: #00ff00; border: 1px solid #555; border-radius: 5px; font-family: inherit; }
+    .motor-controls label { margin-right: 10px; }
+    button { background-color: #333; color: #00ff00; border: 1px solid #555; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-family: inherit; }
+    button:hover { background-color: #444; border-color: #00ff00; }
+    .message { margin-bottom: 5px; white-space: pre-wrap; }
+    .timestamp { color: #666; margin-right: 10px; }
+    .arduino-text { color: #00ff00; }
+    .sent-text { color: #00aaff; }
+    .error-text { color: #ff4444; }
+    .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Tennis Ball Machine Controller</h1>
+    <div id="status" class="status disconnected">● Connecting...</div>
+
+    <div class="monitor" id="monitor">
+      <div style="color: #666; font-style: italic;">Arduino communication will appear here...</div>
+    </div>
+
+    <div class="motor-controls">
+      <label for="pitchInput">Pitch (0–100):</label>
+      <input type="number" id="pitchInput" min="0" max="100" value="50" />
+
+      <label for="angleInput">Angle (0–180):</label>
+      <input type="number" id="angleInput" min="0" max="180" value="90" />
+
+      <label for="topWheelInput">Top Wheel RPM:</label>
+      <input type="number" id="topWheelInput" min="0" max="5000" value="3000" />
+
+      <label for="bottomWheelInput">Bottom Wheel RPM:</label>
+      <input type="number" id="bottomWheelInput" min="0" max="5000" value="2800" />
+
+      <button onclick="sendMotorCommand()" id="sendBtn" disabled>Send</button>
+    </div>
+
+
+    <div class="controls">
+      <button onclick="clearMonitor()">Clear Monitor</button>
+    </div>
+
+    <div class="footer">Control pitch and angle of launch via web interface</div>
+  </div>
+
+  <script>
+    const socket = io();
+    const monitor = document.getElementById('monitor');
+    const statusDiv = document.getElementById('status');
+    const pitchInput = document.getElementById('pitchInput');
+    const angleInput = document.getElementById('angleInput');
+    const sendBtn = document.getElementById('sendBtn');
+    let messageCount = 0;
+
+    socket.on('status', function(data) {
+      if (data.connected) {
+        statusDiv.textContent = '● Arduino Connected';
+        statusDiv.className = 'status connected';
+        sendBtn.disabled = false;
+      } else {
+        statusDiv.textContent = '● Arduino Disconnected';
+        statusDiv.className = 'status disconnected';
+        sendBtn.disabled = true;
+      }
+    });
+
+    socket.on('arduino_message', function(data) {
+      addMessage(data.message, data.timestamp, 'arduino-text');
+    });
+
+    socket.on('message_sent', function(data) {
+      addMessage('→ Sent: ' + data.message, data.timestamp, 'sent-text');
+    });
+
+    socket.on('error', function(data) {
+      addMessage('Error: ' + data.message, new Date().toLocaleTimeString(), 'error-text');
+    });
+
+    function addMessage(message, timestamp, className) {
+      if (messageCount === 0) monitor.innerHTML = '';
+      messageCount++;
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'message';
+      messageDiv.innerHTML = `<span class="timestamp">[${timestamp}]</span><span class="${className}">${message}</span>`;
+      monitor.appendChild(messageDiv);
+      monitor.scrollTop = monitor.scrollHeight;
+    }
+
+    function sendMotorCommand() {
+      const pitch = pitchInput.value.trim(); // LA
+      const angle = angleInput.value.trim(); // STEPPER
+      const top = document.getElementById('topWheelInput').value.trim();
+      const bottom = document.getElementById('bottomWheelInput').value.trim();
+
+      if (!pitch || !angle || !top || !bottom) return;
+
+      const version = "1.0";
+      const msgId = Date.now(); // Unique ID based on timestamp
+
+      const coreMessage = `TOP_MOTOR=${top}|BOTTOM_MOTOR=${bottom}|STEPPER=${angle}|LA=${pitch}`;
+      const baseMessage = `MSG_START|${version}|${msgId}|${coreMessage}`;
+
+      // Simple checksum: sum of ASCII codes modulo 256
+      const checksum = baseMessage.split('')
+        .reduce((sum, char) => sum + char.charCodeAt(0), 0) % 256;
+
+      const fullMessage = `${baseMessage}|#${checksum}|MSG_END`;
+
+      socket.emit('send_message', { message: fullMessage });
+    }
+
+    function clearMonitor() {
+      monitor.innerHTML = '<div style="color: #666; font-style: italic;">Monitor cleared. Arduino communication will appear here...</div>';
+      messageCount = 0;
+    }
+
+    socket.on('connect', function() {
+      addMessage('Connected to server', new Date().toLocaleTimeString(), 'sent-text');
+    });
+
+    socket.on('disconnect', function() {
+      statusDiv.textContent = '● Server Disconnected';
+      statusDiv.className = 'status disconnected';
+      sendBtn.disabled = true;
+      addMessage('Disconnected from server', new Date().toLocaleTimeString(), 'error-text');
+    });
+  </script>
+</body>
+</html>

@@ -155,7 +155,7 @@
                 Arduino communication will appear here...
             </div>
         </div>
-        
+        <!-- 5 -->
         <div class="input-section">
             <input type="text" id="messageInput" placeholder="Type message to send to Arduino..." maxlength="200">
             <button onclick="sendMessage()" id="sendBtn">Send</button>
@@ -171,6 +171,7 @@
     </div>
 
     <script>
+        //3 
         const socket = io();
         const monitor = document.getElementById('monitor');
         const statusDiv = document.getElementById('status');
@@ -192,6 +193,7 @@
             }
         });
 
+        // 8
         // Handle Arduino messages
         socket.on('arduino_message', function(data) {
             console.log('Arduino message received:', data);
@@ -210,6 +212,7 @@
             addMessage('Error: ' + data.message, new Date().toLocaleTimeString(), 'error-text');
         });
 
+        // 9
         // Add message to monitor
         function addMessage(message, timestamp, className) {
             // Clear initial message if it's the first real message
@@ -226,13 +229,14 @@
             monitor.scrollTop = monitor.scrollHeight;
         }
 
+        // 6
         // Send message to Arduino
         function sendMessage() {
             const message = messageInput.value.trim();
             if (!message) return;
             
             console.log('Sending message:', message);
-            socket.emit('send_message', { message: message });
+            socket.emit('send_message', { message: message }); //6
             messageInput.value = '';
         }
 
@@ -242,6 +246,7 @@
             messageCount = 0;
         }
 
+        // 5
         // Handle Enter key
         messageInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter' && !sendBtn.disabled) {

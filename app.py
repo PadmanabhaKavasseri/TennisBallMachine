@@ -51,6 +51,7 @@ def connect_arduino():
         print(f"Failed to connect to Arduino: {e}")
         return False
 
+# running in separate thread
 def arduino_monitor():
     """Monitor Arduino messages and send to web clients"""
     global arduino, running
@@ -86,15 +87,18 @@ def arduino_monitor():
     
     print("DEBUG: Arduino monitor thread ended")
 
+# 2
 @app.route('/')
 def index():
     return render_template('index.html')
 
+# 4
 @socketio.on('connect')
 def handle_connect():
     print('Web client connected')
     emit('status', {'connected': arduino and arduino.is_open})
 
+# 7
 @socketio.on('send_message')
 def handle_send_message(data):
     """Handle message from web client to send to Arduino"""
@@ -139,4 +143,5 @@ if __name__ == '__main__':
         print("Starting without Arduino connection.")
     
     print("Web server starting on http://localhost:5000")
+    # 1
     socketio.run(app, debug=False, host='0.0.0.0', port=5000)
