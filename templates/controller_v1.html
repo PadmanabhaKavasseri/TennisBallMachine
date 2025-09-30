@@ -87,6 +87,24 @@
       font-size: 16px;
     }
 
+    .stepper-panel {
+      flex: 1;
+      min-width: 300px;
+      background-color: #111;
+      border: 2px solid #008866;
+      border-radius: 8px;
+      padding: 20px;
+      color: #00ff00;
+    }
+
+    .stepper-panel h2 {
+      text-align: center;
+      color: #00ff00;
+      text-shadow: 0 0 8px #00ff00;
+      margin-bottom: 15px;
+    }
+
+
     .motor-panel button:hover {
       background-color: #444;
       border-color: #00ff00;
@@ -150,13 +168,10 @@
   <div class="main-panel">
     <!-- Left: Motor Controls -->
     <div class="motor-panel">
+      <h2>Motor Controls</h2>
       <div class="motor-group">
         <label for="pitchInput">Pitch (0–100):</label>
         <input type="number" id="pitchInput" min="0" max="100" value="50" />
-      </div>
-      <div class="motor-group">
-        <label for="angleInput">Angle (0–180):</label>
-        <input type="number" id="angleInput" min="0" max="180" value="90" />
       </div>
       <div class="motor-group">
         <label for="topWheelInput">Top Wheel RPM:</label>
@@ -170,6 +185,12 @@
       <button onclick="clearMonitor()">Clear Monitor</button>
     </div>
 
+    <!-- Middle: Stepper Motor Controls -->
+    <div class="stepper-panel motor-panel">
+      <h2>Stepper Motor Controls</h2>
+      <button onclick="homeStepper()" id="homeBtn" disabled>Home Stepper</button>
+    </div>
+
     <!-- Right: Monitor -->
     <div class="monitor-panel">
       <div class="monitor" id="monitor">
@@ -177,6 +198,9 @@
       </div>
     </div>
   </div>
+
+
+
 
   <div class="footer">Control pitch, angle, and wheel speeds via web interface</div>
 
@@ -194,10 +218,12 @@
         statusDiv.textContent = '● Arduino Connected';
         statusDiv.className = 'status connected';
         sendBtn.disabled = false;
+        homeBtn.disabled = false;
       } else {
         statusDiv.textContent = '● Arduino Disconnected';
         statusDiv.className = 'status disconnected';
         sendBtn.disabled = true;
+        homeBtn.disabled = true;
       }
     });
 
@@ -240,6 +266,18 @@
 
       socket.emit('send_message', { message: fullMessage });
     }
+
+    function homeStepper() {
+      const version = "1.0";
+      const msgId = Date.now();
+      const coreMessage = `STEPPER=HOME`;
+      const baseMessage = `MSG_START|${version}|${msgId}|${coreMessage}`;
+      const checksum = baseMessage.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) % 256;
+      const fullMessage = `${baseMessage}|#${checksum}|MSG_END`;
+
+      socket.emit('send_message', { message: fullMessage });
+    }
+
 
     function clearMonitor() {
       monitor.innerHTML = '<div style="color: #666; font-style: italic;">Monitor cleared. Arduino communication will appear here...</div>';
