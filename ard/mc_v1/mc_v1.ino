@@ -1,9 +1,13 @@
 #include <Servo.h>
 #include <TMCStepper.h>
 
-// Linear Actuator
 Servo linearActuator;
+Servo topMotor;
+Servo bottomMotor;
+
 const int LA_PIN = 6;
+const int TOP_MOTOR_PIN = 3;
+const int BOTTOM_MOTOR_PIN = 2;
 
 // Stepper Motor
 #define DIAG_PIN       23
@@ -21,6 +25,8 @@ void setup() {
   
   // Setup Linear Actuator
   linearActuator.attach(LA_PIN);
+  topMotor.attach(TOP_MOTOR_PIN);
+  bottomMotor.attach(BOTTOM_MOTOR_PIN);
   
   setupStepper();
 
@@ -104,14 +110,29 @@ void routeMotorCommand(String motor, String value, String msgId) {
   }
 }
 
-void handleTopMotor(String rpm, String msgId) {
-  Serial.println("TOP_MOTOR set to " + rpm + " RPM [MSG_ID: " + msgId + "]");
-  // Add actual motor control logic here
+void handleLinearActuator(String pitch, String msgId) {
+  int pitchValue = pitch.toInt();  // 0-100 from your interface
+  
+  // Map 0-100 to servo range 0-180 (internally maps to 1000-2000μs)
+  int servoAngle = map(pitchValue, 0, 100, 0, 180);
+  
+  linearActuator.write(servoAngle);
+  
+  Serial.println("LA set to " + pitch + " (Servo angle: " + String(servoAngle) + "°) [MSG_ID: " + msgId + "]");
 }
 
-void handleBottomMotor(String rpm, String msgId) {
-  Serial.println("BOTTOM_MOTOR set to " + rpm + " RPM [MSG_ID: " + msgId + "]");
-  // Add actual motor control logic here
+void handleTopMotor(String speed, String msgId) {
+  int speedValue = speed.toInt();
+  int servoAngle = map(speedValue, 0, 100, 0, 180);
+  topMotor.write(servoAngle);
+  Serial.println("TOP_MOTOR set to " + speed + " [MSG_ID: " + msgId + "]");
+}
+
+void handleBottomMotor(String speed, String msgId) {
+  int speedValue = speed.toInt();
+  int servoAngle = map(speedValue, 0, 100, 0, 180);
+  bottomMotor.write(servoAngle);
+  Serial.println("BOTTOM_MOTOR set to " + speed + " [MSG_ID: " + msgId + "]");
 }
 
 void handleStepper(String command, String msgId) {
@@ -149,16 +170,6 @@ void handleStepper(String command, String msgId) {
   // Add actual motor control logic here
 }
 
-void handleLinearActuator(String pitch, String msgId) {
-  int pitchValue = pitch.toInt();  // 0-100 from your interface
-  
-  // Map 0-100 to servo range 0-180 (internally maps to 1000-2000μs)
-  int servoAngle = map(pitchValue, 0, 100, 0, 180);
-  
-  linearActuator.write(servoAngle);
-  
-  Serial.println("LA set to " + pitch + " (Servo angle: " + String(servoAngle) + "°) [MSG_ID: " + msgId + "]");
-}
 
 int splitString(String input, char delimiter, String output[], int maxParts) {
   int count = 0;

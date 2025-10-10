@@ -218,16 +218,12 @@
         <input type="number" id="pitchInput" min="0" max="100" value="50" />
       </div>
       <div class="motor-group">
-        <label for="angleInput">Stepper Angle (0–360):</label>
-        <input type="number" id="angleInput" min="0" max="360" value="90" />
+        <label for="topWheelInput">Top Wheel (0–100):</label>
+        <input type="number" id="topWheelInput" min="0" max="100" value="50" />
       </div>
       <div class="motor-group">
-        <label for="topWheelInput">Top Wheel RPM:</label>
-        <input type="number" id="topWheelInput" min="0" max="5000" value="3000" />
-      </div>
-      <div class="motor-group">
-        <label for="bottomWheelInput">Bottom Wheel RPM:</label>
-        <input type="number" id="bottomWheelInput" min="0" max="5000" value="2800" />
+        <label for="bottomWheelInput">Bottom Wheel (0–100):</label>
+        <input type="number" id="bottomWheelInput" min="0" max="100" value="50" />
       </div>
       <button onclick="sendMotorCommand()" id="sendBtn" disabled>Send Command</button>
       <button onclick="clearMonitor()">Clear Monitor</button>
@@ -263,7 +259,6 @@
     const monitor = document.getElementById('monitor');
     const statusDiv = document.getElementById('status');
     const pitchInput = document.getElementById('pitchInput');
-    const angleInput = document.getElementById('angleInput');
     const sendBtn = document.getElementById('sendBtn');
     const homeBtn = document.getElementById('homeBtn');
     let messageCount = 0;
@@ -307,18 +302,17 @@
 
     function sendMotorCommand() {
       const pitch = pitchInput.value.trim();
-      const angle = angleInput.value.trim();
       const top = document.getElementById('topWheelInput').value.trim();
       const bottom = document.getElementById('bottomWheelInput').value.trim();
 
-      if (!pitch || !angle || !top || !bottom) {
+      if (!pitch || !top || !bottom) {
         addMessage('Error: All fields must be filled', new Date().toLocaleTimeString(), 'error-text');
         return;
       }
 
       const version = "1.0";
       const msgId = Date.now();
-      const coreMessage = `TOP_MOTOR=${top}|BOTTOM_MOTOR=${bottom}|STEPPER=${angle}|LA=${pitch}`;
+      const coreMessage = `TOP_MOTOR=${top}|BOTTOM_MOTOR=${bottom}|LA=${pitch}`;
       const baseMessage = `MSG_START|${version}|${msgId}|${coreMessage}`;
       const checksum = baseMessage.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) % 256;
       const fullMessage = `${baseMessage}|#${checksum}|MSG_END`;
