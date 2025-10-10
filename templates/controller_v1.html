@@ -254,6 +254,120 @@
     input:checked + .slider:before {
       transform: translateX(26px);
     }
+
+    .gauge {
+      position: relative;
+      width: 300px;
+      height: 150px;
+      margin: 20px auto;
+    }
+
+    .gauge-bg {
+      width: 300px;
+      height: 150px;
+      border: 5px solid #00ff00;
+      border-bottom: none;
+      border-radius: 150px 150px 0 0;
+      box-sizing: border-box;
+      position: relative;
+      box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+    }
+
+    .needle {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      width: 5px;
+      height: 120px;
+      background: linear-gradient(to top, #00ff00, #00ff00);
+      transform-origin: center bottom;
+      transform: translateX(-50%) rotate(-90deg);
+      transition: transform 0.1s ease;
+      box-shadow: 0 0 15px #00ff00;
+      cursor: grab;
+    }
+
+    .needle:active {
+      cursor: grabbing;
+    }
+
+    .needle::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-bottom: 20px solid #00ff00;
+      margin-top: -20px;
+    }
+
+    .needle::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20px;
+      height: 20px;
+      background: #00ff00;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #00ff00;
+    }
+
+    .angle-display {
+      font-size: 36px;
+      font-weight: bold;
+      margin: 20px 0;
+      text-shadow: 0 0 10px #00ff00;
+    }
+
+    .dial-slider {
+      width: 100%;  /* Changed from 300px */
+      max-width: 300px;  /* Add this */
+      height: 8px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: #333;
+      outline: none;
+      border-radius: 5px;
+      margin: 20px auto;  /* Changed from "20px 0" to center it */
+      display: block;  /* Add this to make margin auto work */
+    }
+
+    .dial-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 25px;
+      height: 25px;
+      background: #00ff00;
+      cursor: pointer;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #00ff00;
+    }
+
+    .dial-slider::-moz-range-thumb {
+      width: 25px;
+      height: 25px;
+      background: #00ff00;
+      cursor: pointer;
+      border-radius: 50%;
+      border: none;
+      box-shadow: 0 0 10px #00ff00;
+    }
+
+    .labels {
+      display: flex;
+      justify-content: space-between;
+      width: 300px;
+      margin: 10px auto;
+      font-size: 14px;
+      color: #00ff00;
+      opacity: 0.7;
+    }
   </style>
 </head>
 <body>
@@ -297,6 +411,21 @@
     <!-- Middle: Stepper Motor Controls -->
     <div class="stepper-panel motor-panel">
       <h2>Stepper Motor Controls</h2>
+      
+      <div class="gauge">
+        <div class="gauge-bg"></div>
+        <div class="needle" id="needle"></div>
+      </div>
+
+      <div class="angle-display" id="display">90°</div>
+
+      <div class="labels">
+        <span>0°</span>
+        <span>90°</span>
+        <span>180°</span>
+      </div>
+
+      <input type="range" id="slider" class="dial-slider" min="0" max="180" value="90">
 
       <button onclick="homeStepper()" id="homeBtn" disabled>Home Stepper</button>
     </div>
@@ -316,8 +445,13 @@
     const monitor = document.getElementById('monitor');
     const statusDiv = document.getElementById('status');
     const homeBtn = document.getElementById('homeBtn');
+    const slider = document.getElementById('slider');
+    const needle = document.getElementById('needle');
+    const display = document.getElementById('display');
+    const gauge = document.querySelector('.gauge');
     let messageCount = 0;
     let currentMode = 'slider';
+    let isDragging = false;
 
     function getMotorValue(motor) {
       if (currentMode === 'slider') {
@@ -429,6 +563,90 @@
 
       socket.emit('send_message', { message: fullMessage });
     }
+
+    function updateAngle(angle) {
+      // Clamp angle between 0 and 180
+      angle = Math.max(0, Math.min(180, angle));
+      
+      const rotation = angle - 90;
+      needle.style.transform = `translateX(-50%) rotate(${rotation}deg)`;
+      display.textContent = Math.round(angle) + '°';
+      slider.value = angle;
+    }
+
+    function getAngleFromMouse(e) {
+      const rect = gauge.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.bottom;
+      
+      const mouseX = e.clientX || e.touches[0].clientX;
+      const mouseY = e.clientY || e.touches[0].clientY;
+      
+      const deltaX = mouseX - centerX;
+      const deltaY = centerY - mouseY;
+      
+      // Calculate angle in degrees
+      let angle = Math.atan2(deltaX, deltaY) * (180 / Math.PI);
+      
+      // Convert to 0-180 range
+      angle = angle + 90;
+      
+      return angle;
+    }
+
+    // Slider input
+    slider.addEventListener('input', function() {
+      updateAngle(this.value);
+    });
+
+    // Needle dragging
+    needle.addEventListener('mousedown', function(e) {
+      isDragging = true;
+      needle.style.transition = 'none';
+      e.preventDefault();
+    });
+
+    needle.addEventListener('touchstart', function(e) {
+      isDragging = true;
+      needle.style.transition = 'none';
+      e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', function(e) {
+      if (isDragging) {
+        const angle = getAngleFromMouse(e);
+        updateAngle(angle);
+      }
+    });
+
+    document.addEventListener('touchmove', function(e) {
+      if (isDragging) {
+        const angle = getAngleFromMouse(e);
+        updateAngle(angle);
+      }
+    });
+
+    document.addEventListener('mouseup', function() {
+      if (isDragging) {
+        isDragging = false;
+        needle.style.transition = 'transform 0.1s ease';
+      }
+    });
+
+    document.addEventListener('touchend', function() {
+      if (isDragging) {
+        isDragging = false;
+        needle.style.transition = 'transform 0.1s ease';
+      }
+    });
+
+    // Click on gauge to set angle
+    gauge.addEventListener('click', function(e) {
+      if (e.target !== needle && !needle.contains(e.target)) {
+        const angle = getAngleFromMouse(e);
+        updateAngle(angle);
+      }
+    });
 
     function clearMonitor() {
       monitor.innerHTML = '<div style="color: #666; font-style: italic;">Monitor cleared. Arduino communication will appear here...</div>';
