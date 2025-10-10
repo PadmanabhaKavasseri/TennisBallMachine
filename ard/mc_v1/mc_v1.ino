@@ -1,10 +1,15 @@
+#include <Servo.h>
 #include <TMCStepper.h>
 
-// #define EN_PIN         6
-#define DIAG_PIN       3
+// Linear Actuator
+Servo linearActuator;
+const int LA_PIN = 6;
+
+// Stepper Motor
+#define DIAG_PIN       23
 #define DRIVER_ADDRESS 0b00
 #define R_SENSE        0.11f
-#define LIMIT_PIN      10           // Physical limit switch input
+#define LIMIT_PIN      28
 
 TMC2209Stepper driver(&Serial1, R_SENSE, DRIVER_ADDRESS);
 bool homingComplete = false;
@@ -13,7 +18,10 @@ unsigned long backoffStartTime = 0;
 
 void setup() {
   Serial.begin(9600);
-
+  
+  // Setup Linear Actuator
+  linearActuator.attach(LA_PIN);
+  
   setupStepper();
 
   delay(2000);
@@ -34,24 +42,21 @@ void loop() {
 }
 
 void setupStepper(){
-  //rxtx1 for stepper motor
   Serial1.begin(9600);
 
-  // pinMode(EN_PIN, OUTPUT);
   pinMode(DIAG_PIN, INPUT_PULLUP);
-  pinMode(LIMIT_PIN, INPUT_PULLUP); // ✅ Added this line to stabilize input
-  // digitalWrite(EN_PIN, LOW);        // Enable driver
+  pinMode(LIMIT_PIN, INPUT_PULLUP);
 
   driver.begin();
-  driver.toff(5);                   // Enable driver timing
-  driver.rms_current(1500);         // Set motor current
-  driver.microsteps(16);            // Microstepping for smooth motion
-  driver.pwm_autoscale(true);       // Maintain torque at low speeds
-  driver.en_spreadCycle(false);     // StealthChop for quiet operation
-  driver.TCOOLTHRS(0xFFFFF);        // StallGuard velocity threshold
-  driver.semin(5);                  // StallGuard sensitivity
-  driver.semax(2);                  // StallGuard upper threshold
-  driver.sedn(0b01);                // StallGuard filter setting
+  driver.toff(5);
+  driver.rms_current(1500);
+  driver.microsteps(16);
+  driver.pwm_autoscale(true);
+  driver.en_spreadCycle(false);
+  driver.TCOOLTHRS(0xFFFFF);
+  driver.semin(5);
+  driver.semax(2);
+  driver.sedn(0b01);
 
   Serial.println("Stepper Setup Complete");
 }
@@ -109,33 +114,50 @@ void handleBottomMotor(String rpm, String msgId) {
   // Add actual motor control logic here
 }
 
-void handleStepper(String angle, String msgId) {
-  if (angle == "HOME") {
+void handleStepper(String command, String msgId) {
+  if (command == "HOME") {
     Serial.println("🔄 Homing stepper... [MSG_ID: " + msgId + "]");
-    driver.VACTUAL(-2000); // Move toward limit
+    driver.VACTUAL(-2000);
 
     while (digitalRead(LIMIT_PIN) != LOW) {
-      delay(1); // crude polling
+      delay(1);
     }
 
-    driver.VACTUAL(0); // Stop
+    driver.VACTUAL(0);
     delay(500);
 
-    driver.VACTUAL(2000); // Back off
-    delay(1000);          // Adjust duration as needed
+    driver.VACTUAL(2000);
+    delay(500);
     driver.VACTUAL(0);
 
     Serial.println("✅ Homing complete.");
     homingComplete = true;
     return;
   }
-  Serial.println("STEPPER set to " + angle + "° [MSG_ID: " + msgId + "]");
+
+  if (command == "ENABLE") {
+    Serial.println("✅ Stepper driver enabled [MSG_ID: " + msgId + "]");
+    return;
+  }
+
+  if (command == "DISABLE") {
+    Serial.println("⛔ Stepper driver disabled [MSG_ID: " + msgId + "]");
+    return;
+  }
+
+  Serial.println("STEPPER set to " + command + "° [MSG_ID: " + msgId + "]");
   // Add actual motor control logic here
 }
 
-void handleLinearActuator(String angle, String msgId) {
-  Serial.println("LA set to " + angle + "° [MSG_ID: " + msgId + "]");
-  // Add actual motor control logic here
+void handleLinearActuator(String pitch, String msgId) {
+  int pitchValue = pitch.toInt();  // 0-100 from your interface
+  
+  // Map 0-100 to servo range 0-180 (internally maps to 1000-2000μs)
+  int servoAngle = map(pitchValue, 0, 100, 0, 180);
+  
+  linearActuator.write(servoAngle);
+  
+  Serial.println("LA set to " + pitch + " (Servo angle: " + String(servoAngle) + "°) [MSG_ID: " + msgId + "]");
 }
 
 int splitString(String input, char delimiter, String output[], int maxParts) {
@@ -162,5 +184,7 @@ compile:
 arduino-cli compile --fqbn arduino:avr:mega mc_v1.ino
 
 flash:
-arduino-cli upload -p /dev/cu.usbmodem14501 --fqbn arduino:avr:mega mc_v1.ino
+arduino-cli upload -p /dev/cu.usbmodem14101 --fqbn arduino:avr:mega mc_v1.ino
+
+arduino-cli lib install Servo
 */

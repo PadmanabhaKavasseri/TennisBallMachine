@@ -104,7 +104,6 @@
       margin-bottom: 15px;
     }
 
-
     .motor-panel button:hover {
       background-color: #444;
       border-color: #00ff00;
@@ -159,6 +158,51 @@
       color: #666;
       font-size: 12px;
     }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 34px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #333;
+      transition: .4s;
+      border-radius: 34px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: #00ff00;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
   </style>
 </head>
 <body>
@@ -172,6 +216,10 @@
       <div class="motor-group">
         <label for="pitchInput">Pitch (0–100):</label>
         <input type="number" id="pitchInput" min="0" max="100" value="50" />
+      </div>
+      <div class="motor-group">
+        <label for="angleInput">Stepper Angle (0–360):</label>
+        <input type="number" id="angleInput" min="0" max="360" value="90" />
       </div>
       <div class="motor-group">
         <label for="topWheelInput">Top Wheel RPM:</label>
@@ -188,6 +236,15 @@
     <!-- Middle: Stepper Motor Controls -->
     <div class="stepper-panel motor-panel">
       <h2>Stepper Motor Controls</h2>
+
+      <div class="motor-group">
+        <label for="enableStepperToggle">Enable Stepper:</label>
+        <label class="switch">
+          <input type="checkbox" id="enableStepperToggle" onchange="toggleStepperEnable()" />
+          <span class="slider"></span>
+        </label>
+      </div>
+
       <button onclick="homeStepper()" id="homeBtn" disabled>Home Stepper</button>
     </div>
 
@@ -199,9 +256,6 @@
     </div>
   </div>
 
-
-
-
   <div class="footer">Control pitch, angle, and wheel speeds via web interface</div>
 
   <script>
@@ -211,6 +265,7 @@
     const pitchInput = document.getElementById('pitchInput');
     const angleInput = document.getElementById('angleInput');
     const sendBtn = document.getElementById('sendBtn');
+    const homeBtn = document.getElementById('homeBtn');
     let messageCount = 0;
 
     socket.on('status', function(data) {
@@ -218,7 +273,8 @@
         statusDiv.textContent = '● Arduino Connected';
         statusDiv.className = 'status connected';
         sendBtn.disabled = false;
-        homeBtn.disabled = false;
+        const isStepperEnabled = document.getElementById('enableStepperToggle').checked;
+        homeBtn.disabled = !isStepperEnabled;
       } else {
         statusDiv.textContent = '● Arduino Disconnected';
         statusDiv.className = 'status disconnected';
@@ -255,11 +311,28 @@
       const top = document.getElementById('topWheelInput').value.trim();
       const bottom = document.getElementById('bottomWheelInput').value.trim();
 
-      if (!pitch || !angle || !top || !bottom) return;
+      if (!pitch || !angle || !top || !bottom) {
+        addMessage('Error: All fields must be filled', new Date().toLocaleTimeString(), 'error-text');
+        return;
+      }
 
       const version = "1.0";
       const msgId = Date.now();
       const coreMessage = `TOP_MOTOR=${top}|BOTTOM_MOTOR=${bottom}|STEPPER=${angle}|LA=${pitch}`;
+      const baseMessage = `MSG_START|${version}|${msgId}|${coreMessage}`;
+      const checksum = baseMessage.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) % 256;
+      const fullMessage = `${baseMessage}|#${checksum}|MSG_END`;
+
+      socket.emit('send_message', { message: fullMessage });
+    }
+
+    function toggleStepperEnable() {
+      const isEnabled = document.getElementById('enableStepperToggle').checked;
+      homeBtn.disabled = !isEnabled;
+
+      const version = "1.0";
+      const msgId = Date.now();
+      const coreMessage = `STEPPER=${isEnabled ? "ENABLE" : "DISABLE"}`;
       const baseMessage = `MSG_START|${version}|${msgId}|${coreMessage}`;
       const checksum = baseMessage.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) % 256;
       const fullMessage = `${baseMessage}|#${checksum}|MSG_END`;
@@ -278,7 +351,6 @@
       socket.emit('send_message', { message: fullMessage });
     }
 
-
     function clearMonitor() {
       monitor.innerHTML = '<div style="color: #666; font-style: italic;">Monitor cleared. Arduino communication will appear here...</div>';
       messageCount = 0;
@@ -292,6 +364,7 @@
       statusDiv.textContent = '● Server Disconnected';
       statusDiv.className = 'status disconnected';
       sendBtn.disabled = true;
+      homeBtn.disabled = true;
       addMessage('Disconnected from server', new Date().toLocaleTimeString(), 'error-text');
     });
   </script>

@@ -8,3 +8,7 @@
     - app.py which uses index.html
 
 
+Current
+source .venv/bin/activate  
+controller_v1.py
+mc_v1.ino
