@@ -75,6 +75,57 @@
       font-size: 16px;
     }
 
+    .motor-group input[type="range"] {
+      padding: 0;
+      height: 30px;
+      cursor: pointer;
+    }
+
+    .motor-group input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      background: #00ff00;
+      cursor: pointer;
+      border-radius: 50%;
+    }
+
+    .motor-group input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      background: #00ff00;
+      cursor: pointer;
+      border-radius: 50%;
+      border: none;
+    }
+
+    .value-display {
+      display: inline-block;
+      margin-left: 10px;
+      font-weight: bold;
+      color: #00ff00;
+      min-width: 30px;
+    }
+
+    .control-mode-toggle {
+      text-align: center;
+      margin-bottom: 20px;
+      padding: 15px;
+      background-color: #0a0a0a;
+      border: 1px solid #444;
+      border-radius: 5px;
+    }
+
+    .control-mode-toggle label {
+      margin: 0 10px;
+      cursor: pointer;
+    }
+
+    .control-mode-toggle input[type="radio"] {
+      margin-right: 5px;
+    }
+
     .motor-panel button {
       width: 100%;
       padding: 10px;
@@ -213,33 +264,39 @@
     <!-- Left: Motor Controls -->
     <div class="motor-panel">
       <h2>Motor Controls</h2>
+      
+      <div class="control-mode-toggle">
+        <label>
+          <input type="radio" name="controlMode" value="slider" checked onchange="toggleControlMode()">
+          Slider Mode
+        </label>
+        <label>
+          <input type="radio" name="controlMode" value="number" onchange="toggleControlMode()">
+          Number Input
+        </label>
+      </div>
+
       <div class="motor-group">
-        <label for="pitchInput">Pitch (0–100):</label>
-        <input type="number" id="pitchInput" min="0" max="100" value="50" />
+        <label for="pitchInput">Pitch (0–100):<span class="value-display" id="pitchValue">50</span></label>
+        <input type="range" id="pitchSlider" min="0" max="100" value="50" oninput="updateValue('pitch')" onchange="sendMotorCommand()" />
+        <input type="number" id="pitchNumber" min="0" max="100" value="50" style="display:none;" oninput="updateValue('pitch')" onchange="sendMotorCommand()" />
       </div>
       <div class="motor-group">
-        <label for="topWheelInput">Top Wheel (0–100):</label>
-        <input type="number" id="topWheelInput" min="0" max="100" value="50" />
+        <label for="topWheelInput">Top Wheel (0–100):<span class="value-display" id="topWheelValue">50</span></label>
+        <input type="range" id="topWheelSlider" min="0" max="100" value="50" oninput="updateValue('topWheel')" onchange="sendMotorCommand()" />
+        <input type="number" id="topWheelNumber" min="0" max="100" value="50" style="display:none;" oninput="updateValue('topWheel')" onchange="sendMotorCommand()" />
       </div>
       <div class="motor-group">
-        <label for="bottomWheelInput">Bottom Wheel (0–100):</label>
-        <input type="number" id="bottomWheelInput" min="0" max="100" value="50" />
+        <label for="bottomWheelInput">Bottom Wheel (0–100):<span class="value-display" id="bottomWheelValue">50</span></label>
+        <input type="range" id="bottomWheelSlider" min="0" max="100" value="50" oninput="updateValue('bottomWheel')" onchange="sendMotorCommand()" />
+        <input type="number" id="bottomWheelNumber" min="0" max="100" value="50" style="display:none;" oninput="updateValue('bottomWheel')" onchange="sendMotorCommand()" />
       </div>
-      <button onclick="sendMotorCommand()" id="sendBtn" disabled>Send Command</button>
       <button onclick="clearMonitor()">Clear Monitor</button>
     </div>
 
     <!-- Middle: Stepper Motor Controls -->
     <div class="stepper-panel motor-panel">
       <h2>Stepper Motor Controls</h2>
-
-      <div class="motor-group">
-        <label for="enableStepperToggle">Enable Stepper:</label>
-        <label class="switch">
-          <input type="checkbox" id="enableStepperToggle" onchange="toggleStepperEnable()" />
-          <span class="slider"></span>
-        </label>
-      </div>
 
       <button onclick="homeStepper()" id="homeBtn" disabled>Home Stepper</button>
     </div>
@@ -258,22 +315,64 @@
     const socket = io();
     const monitor = document.getElementById('monitor');
     const statusDiv = document.getElementById('status');
-    const pitchInput = document.getElementById('pitchInput');
-    const sendBtn = document.getElementById('sendBtn');
     const homeBtn = document.getElementById('homeBtn');
     let messageCount = 0;
+    let currentMode = 'slider';
+
+    function getMotorValue(motor) {
+      if (currentMode === 'slider') {
+        return document.getElementById(motor + 'Slider').value;
+      } else {
+        return document.getElementById(motor + 'Number').value;
+      }
+    }
+
+    function updateValue(motor) {
+      const value = getMotorValue(motor);
+      document.getElementById(motor + 'Value').textContent = value;
+      
+      // Sync slider and number input
+      if (currentMode === 'slider') {
+        document.getElementById(motor + 'Number').value = value;
+      } else {
+        document.getElementById(motor + 'Slider').value = value;
+      }
+    }
+
+    function toggleControlMode() {
+      const mode = document.querySelector('input[name="controlMode"]:checked').value;
+      currentMode = mode;
+      
+      const motors = ['pitch', 'topWheel', 'bottomWheel'];
+      
+      motors.forEach(motor => {
+        const slider = document.getElementById(motor + 'Slider');
+        const number = document.getElementById(motor + 'Number');
+        
+        if (mode === 'slider') {
+          slider.style.display = 'block';
+          number.style.display = 'none';
+          // Sync values
+          slider.value = number.value;
+          updateValue(motor);
+        } else {
+          slider.style.display = 'none';
+          number.style.display = 'block';
+          // Sync values
+          number.value = slider.value;
+          updateValue(motor);
+        }
+      });
+    }
 
     socket.on('status', function(data) {
       if (data.connected) {
         statusDiv.textContent = '● Arduino Connected';
         statusDiv.className = 'status connected';
-        sendBtn.disabled = false;
-        const isStepperEnabled = document.getElementById('enableStepperToggle').checked;
-        homeBtn.disabled = !isStepperEnabled;
+        homeBtn.disabled = false;
       } else {
         statusDiv.textContent = '● Arduino Disconnected';
         statusDiv.className = 'status disconnected';
-        sendBtn.disabled = true;
         homeBtn.disabled = true;
       }
     });
@@ -301,9 +400,9 @@
     }
 
     function sendMotorCommand() {
-      const pitch = pitchInput.value.trim();
-      const top = document.getElementById('topWheelInput').value.trim();
-      const bottom = document.getElementById('bottomWheelInput').value.trim();
+      const pitch = getMotorValue('pitch');
+      const top = getMotorValue('topWheel');
+      const bottom = getMotorValue('bottomWheel');
 
       if (!pitch || !top || !bottom) {
         addMessage('Error: All fields must be filled', new Date().toLocaleTimeString(), 'error-text');
@@ -313,20 +412,6 @@
       const version = "1.0";
       const msgId = Date.now();
       const coreMessage = `TOP_MOTOR=${top}|BOTTOM_MOTOR=${bottom}|LA=${pitch}`;
-      const baseMessage = `MSG_START|${version}|${msgId}|${coreMessage}`;
-      const checksum = baseMessage.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) % 256;
-      const fullMessage = `${baseMessage}|#${checksum}|MSG_END`;
-
-      socket.emit('send_message', { message: fullMessage });
-    }
-
-    function toggleStepperEnable() {
-      const isEnabled = document.getElementById('enableStepperToggle').checked;
-      homeBtn.disabled = !isEnabled;
-
-      const version = "1.0";
-      const msgId = Date.now();
-      const coreMessage = `STEPPER=${isEnabled ? "ENABLE" : "DISABLE"}`;
       const baseMessage = `MSG_START|${version}|${msgId}|${coreMessage}`;
       const checksum = baseMessage.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) % 256;
       const fullMessage = `${baseMessage}|#${checksum}|MSG_END`;
@@ -357,7 +442,6 @@
     socket.on('disconnect', function() {
       statusDiv.textContent = '● Server Disconnected';
       statusDiv.className = 'status disconnected';
-      sendBtn.disabled = true;
       homeBtn.disabled = true;
       addMessage('Disconnected from server', new Date().toLocaleTimeString(), 'error-text');
     });
