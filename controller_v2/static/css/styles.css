@@ -1,0 +1,414 @@
+/* Tennis Ball Machine Controller Styles */
+
+body {
+  font-family: 'Courier New', monospace;
+  background-color: #1e1e1e;
+  color: #00ff00;
+  margin: 0;
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+  color: #00ff00;
+  text-shadow: 0 0 10px #00ff00;
+  margin-bottom: 10px;
+}
+
+.status {
+  text-align: center;
+  padding: 10px;
+  margin-bottom: 20px;
+  font-weight: bold;
+  border-radius: 5px;
+}
+
+.status.connected {
+  background-color: #003300;
+  border: 1px solid #00ff00;
+}
+
+.status.disconnected {
+  background-color: #330000;
+  border: 1px solid #ff0000;
+  color: #ff4444;
+}
+
+.main-panel {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.motor-panel {
+  flex: 1;
+  min-width: 300px;
+  background-color: #111;
+  border: 2px solid #333;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.motor-group {
+  margin-bottom: 20px;
+}
+
+.motor-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.motor-group input {
+  width: 100%;
+  padding: 10px;
+  background-color: #222;
+  border: 1px solid #555;
+  border-radius: 5px;
+  color: #00ff00;
+  font-size: 16px;
+}
+
+.motor-group input[type="range"] {
+  padding: 0;
+  height: 30px;
+  cursor: pointer;
+}
+
+.motor-group input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: #00ff00;
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.motor-group input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: #00ff00;
+  cursor: pointer;
+  border-radius: 50%;
+  border: none;
+}
+
+.value-display {
+  display: inline-block;
+  margin-left: 10px;
+  font-weight: bold;
+  color: #00ff00;
+  min-width: 30px;
+}
+
+.control-mode-toggle {
+  text-align: center;
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #0a0a0a;
+  border: 1px solid #444;
+  border-radius: 5px;
+}
+
+.control-mode-toggle label {
+  margin: 0 10px;
+  cursor: pointer;
+}
+
+.control-mode-toggle input[type="radio"] {
+  margin-right: 5px;
+}
+
+.motor-panel button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  background-color: #333;
+  color: #00ff00;
+  border: 1px solid #555;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.stepper-panel {
+  flex: 1;
+  min-width: 300px;
+  background-color: #111;
+  border: 2px solid #008866;
+  border-radius: 8px;
+  padding: 20px;
+  color: #00ff00;
+}
+
+.stepper-panel h2 {
+  text-align: center;
+  color: #00ff00;
+  text-shadow: 0 0 8px #00ff00;
+  margin-bottom: 15px;
+}
+
+.motor-panel button:hover {
+  background-color: #444;
+  border-color: #00ff00;
+}
+
+.motor-panel button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.monitor-panel {
+  flex: 1;
+  min-width: 300px;
+}
+
+.monitor {
+  height: 400px;
+  overflow-y: auto;
+  padding: 15px;
+  background-color: #000;
+  border: 2px solid #333;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.message {
+  margin-bottom: 5px;
+  white-space: pre-wrap;
+}
+
+.timestamp {
+  color: #666;
+  margin-right: 10px;
+}
+
+.arduino-text {
+  color: #00ff00;
+}
+
+.sent-text {
+  color: #00aaff;
+}
+
+.error-text {
+  color: #ff4444;
+}
+
+.footer {
+  text-align: center;
+  margin-top: 20px;
+  color: #666;
+  font-size: 12px;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #333;
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #00ff00;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+.gauge {
+  position: relative;
+  width: 300px;
+  height: 150px;
+  margin: 20px auto;
+}
+
+.gauge-bg {
+  width: 300px;
+  height: 150px;
+  border: 5px solid #00ff00;
+  border-bottom: none;
+  border-radius: 150px 150px 0 0;
+  box-sizing: border-box;
+  position: relative;
+  box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+}
+
+.needle {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 5px;
+  height: 120px;
+  background: linear-gradient(to top, #00ff00, #00ff00);
+  transform-origin: center bottom;
+  transform: translateX(-50%) rotate(-90deg);
+  transition: transform 0.1s ease;
+  box-shadow: 0 0 15px #00ff00;
+  cursor: grab;
+}
+
+.needle:active {
+  cursor: grabbing;
+}
+
+.needle::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 20px solid #00ff00;
+}
+
+.gauge-display {
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 24px;
+  font-weight: bold;
+  color: #00ff00;
+  text-shadow: 0 0 10px #00ff00;
+}
+
+.gauge-labels {
+  position: absolute;
+  bottom: -5px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  color: #00ff00;
+  font-size: 12px;
+  padding: 0 10px;
+}
+
+.slider-control {
+  margin-top: 10px;
+}
+
+.slider-control input[type="range"] {
+  width: 100%;
+  -webkit-appearance: none;
+  height: 5px;
+  background: #333;
+  outline: none;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.slider-control input[type="range"]:hover {
+  opacity: 1;
+}
+
+.slider-control input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: #00ff00;
+  cursor: pointer;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #00ff00;
+}
+
+.slider-control input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: #00ff00;
+  cursor: pointer;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #00ff00;
+}
+
+.stepper-controls {
+  margin-top: 20px;
+}
+
+.stepper-controls input[type="number"] {
+  width: 100%;
+  padding: 10px;
+  background-color: #222;
+  border: 1px solid #555;
+  border-radius: 5px;
+  color: #00ff00;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.stepper-controls button {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  background-color: #333;
+  color: #00ff00;
+  border: 1px solid #555;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s;
+}
+
+.stepper-controls button:hover:not(:disabled) {
+  background-color: #444;
+  border-color: #00ff00;
+}
+
+.stepper-controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.direction-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding: 10px;
+  background-color: #1a1a1a;
+  border-radius: 5px;
+}
+
+.direction-display {
+  font-size: 18px;
+  font-weight: bold;
+  color: #00ff00;
+  text-shadow: 0 0 5px #00ff00;
+}

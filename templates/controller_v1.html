@@ -391,19 +391,19 @@
       </div>
 
       <div class="motor-group">
-        <label for="pitchInput">Pitch (0–100):<span class="value-display" id="pitchValue">50</span></label>
-        <input type="range" id="pitchSlider" min="0" max="100" value="50" oninput="updateValue('pitch')" onchange="sendMotorCommand()" />
-        <input type="number" id="pitchNumber" min="0" max="100" value="50" style="display:none;" oninput="updateValue('pitch')" onchange="sendMotorCommand()" />
+        <label for="pitchInput">Pitch (56–84):<span class="value-display" id="pitchValue">70</span></label>
+        <input type="range" id="pitchSlider" min="56" max="84" value="70" oninput="updateValue('pitch')" onchange="sendMotorCommand()" />
+        <input type="number" id="pitchNumber" min="56" max="84" value="70" style="display:none;" oninput="updateValue('pitch')" onchange="sendMotorCommand()" />
       </div>
       <div class="motor-group">
-        <label for="topWheelInput">Top Wheel (0–100):<span class="value-display" id="topWheelValue">50</span></label>
-        <input type="range" id="topWheelSlider" min="0" max="100" value="50" oninput="updateValue('topWheel')" onchange="sendMotorCommand()" />
-        <input type="number" id="topWheelNumber" min="0" max="100" value="50" style="display:none;" oninput="updateValue('topWheel')" onchange="sendMotorCommand()" />
+        <label for="topWheelInput">Top Wheel (0–100):<span class="value-display" id="topWheelValue">0</span></label>
+        <input type="range" id="topWheelSlider" min="0" max="100" value="0" oninput="updateValue('topWheel')" onchange="sendMotorCommand()" />
+        <input type="number" id="topWheelNumber" min="0" max="100" value="0" style="display:none;" oninput="updateValue('topWheel')" onchange="sendMotorCommand()" />
       </div>
       <div class="motor-group">
-        <label for="bottomWheelInput">Bottom Wheel (0–100):<span class="value-display" id="bottomWheelValue">50</span></label>
-        <input type="range" id="bottomWheelSlider" min="0" max="100" value="50" oninput="updateValue('bottomWheel')" onchange="sendMotorCommand()" />
-        <input type="number" id="bottomWheelNumber" min="0" max="100" value="50" style="display:none;" oninput="updateValue('bottomWheel')" onchange="sendMotorCommand()" />
+        <label for="bottomWheelInput">Bottom Wheel (0–100):<span class="value-display" id="bottomWheelValue">0</span></label>
+        <input type="range" id="bottomWheelSlider" min="0" max="100" value="0" oninput="updateValue('bottomWheel')" onchange="sendMotorCommand()" />
+        <input type="number" id="bottomWheelNumber" min="0" max="100" value="0" style="display:none;" oninput="updateValue('bottomWheel')" onchange="sendMotorCommand()" />
       </div>
       <button onclick="clearMonitor()">Clear Monitor</button>
     </div>
@@ -412,6 +412,16 @@
     <div class="stepper-panel motor-panel">
       <h2>Stepper Motor Controls</h2>
       
+      <div style="text-align: left; margin-bottom: 20px;">
+        <label style="display: flex; align-items: center; gap: 10px;">
+          <span>Motor Enable:</span>
+          <label class="switch">
+            <input type="checkbox" id="enableToggle" onchange="toggleStepperEnable()">
+            <span class="slider"></span>
+          </label>
+        </label>
+      </div>
+
       <div class="gauge">
         <div class="gauge-bg"></div>
         <div class="needle" id="needle"></div>
@@ -428,6 +438,29 @@
       <input type="range" id="slider" class="dial-slider" min="0" max="180" value="90">
 
       <button onclick="homeStepper()" id="homeBtn" disabled>Home Stepper</button>
+
+      <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #444;">
+        <h3 style="text-align: center; font-size: 16px; margin-bottom: 15px;">Step Testing Tool</h3>
+        
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; margin-bottom: 5px;">Direction:</label>
+          <label class="switch">
+            <input type="checkbox" id="dirToggle" onchange="updateDirectionDisplay()">
+            <span class="slider"></span>
+          </label>
+          <span id="dirDisplay" style="margin-left: 10px; font-weight: bold;">CW</span>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; margin-bottom: 5px;">Number of Steps:</label>
+          <input type="number" id="stepCount" min="1" max="10000" value="100" 
+                style="width: 100%; padding: 8px; background-color: #222; border: 1px solid #555; 
+                        border-radius: 5px; color: #00ff00; font-size: 16px;">
+        </div>
+        
+        <button onclick="sendStepCommand()" id="stepBtn" disabled 
+                style="background-color: #444;">Move Steps</button>
+      </div>
     </div>
 
     <!-- Right: Monitor -->
@@ -553,10 +586,65 @@
       socket.emit('send_message', { message: fullMessage });
     }
 
+    function toggleStepperEnable() {
+      const enabled = document.getElementById('enableToggle').checked;
+      const command = enabled ? 'ENABLE' : 'DISABLE';
+      
+      // Enable/disable controls
+      document.getElementById('homeBtn').disabled = !enabled;
+      document.getElementById('slider').disabled = !enabled;
+      document.getElementById('stepBtn').disabled = !enabled;  // ADD THIS LINE
+      
+      // Visual feedback
+      const gauge = document.querySelector('.gauge');
+      const needle = document.getElementById('needle');
+      if (enabled) {
+        gauge.style.opacity = '1';
+        needle.style.pointerEvents = 'auto';
+      } else {
+        gauge.style.opacity = '0.3';
+        needle.style.pointerEvents = 'none';
+      }
+      
+      const version = "1.0";
+      const msgId = Date.now();
+      const coreMessage = `STEPPER=${command}`;
+      const baseMessage = `MSG_START|${version}|${msgId}|${coreMessage}`;
+      const checksum = baseMessage.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) % 256;
+      const fullMessage = `${baseMessage}|#${checksum}|MSG_END`;
+
+      socket.emit('send_message', { message: fullMessage });
+    }
+
     function homeStepper() {
       const version = "1.0";
       const msgId = Date.now();
       const coreMessage = `STEPPER=HOME`;
+      const baseMessage = `MSG_START|${version}|${msgId}|${coreMessage}`;
+      const checksum = baseMessage.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) % 256;
+      const fullMessage = `${baseMessage}|#${checksum}|MSG_END`;
+
+      socket.emit('send_message', { message: fullMessage });
+    }
+
+    function updateDirectionDisplay() {
+      const isCCW = document.getElementById('dirToggle').checked;
+      document.getElementById('dirDisplay').textContent = isCCW ? 'CCW' : 'CW';
+    }
+
+    function sendStepCommand() {
+      const steps = document.getElementById('stepCount').value;
+      const isCCW = document.getElementById('dirToggle').checked;
+      const direction = isCCW ? 'CCW' : 'CW';
+      
+      if (!steps || steps <= 0) {
+        addMessage('Error: Enter valid step count', new Date().toLocaleTimeString(), 'error-text');
+        return;
+      }
+      
+      const version = "1.0";
+      const msgId = Date.now();
+      const coreMessage = `STEPPER=STEP_${direction}_${steps}`;
       const baseMessage = `MSG_START|${version}|${msgId}|${coreMessage}`;
       const checksum = baseMessage.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) % 256;
       const fullMessage = `${baseMessage}|#${checksum}|MSG_END`;
@@ -663,6 +751,12 @@
       homeBtn.disabled = true;
       addMessage('Disconnected from server', new Date().toLocaleTimeString(), 'error-text');
     });
+
+    // Initialize stepper controls as disabled
+    document.getElementById('homeBtn').disabled = true;
+    document.getElementById('slider').disabled = true;
+    document.querySelector('.gauge').style.opacity = '0.3';
+    document.getElementById('needle').style.pointerEvents = 'none';
   </script>
 </body>
 </html>
