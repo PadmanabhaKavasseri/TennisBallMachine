@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tennis Ball Machine Controller</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h1>Tennis Ball Machine Controller</h1>
+  <div id="status" class="status disconnected">● Connecting...</div>
+
+  <div class="main-panel">
+    <!-- Left: Motor Controls -->
+    <div class="motor-panel">
+      <h2>Motor Controls</h2>
+      
+      <div class="control-mode-toggle">
+        <label>
+          <input type="radio" name="controlMode" value="slider" checked onchange="toggleControlMode()">
+          Slider Mode
+        </label>
+        <label>
+          <input type="radio" name="controlMode" value="number" onchange="toggleControlMode()">
+          Number Input
+        </label>
+      </div>
+
+      <div class="motor-group">
+        <label for="pitchInput">Pitch (56–84):<span class="value-display" id="pitchValue">70</span></label>
+        <input type="range" id="pitchSlider" min="56" max="84" value="70" oninput="updateValue('pitch')" onchange="sendMotorCommand()" />
+        <input type="number" id="pitchNumber" min="56" max="84" value="70" style="display:none;" oninput="updateValue('pitch')" onchange="sendMotorCommand()" />
+      </div>
+      <div class="motor-group">
+        <label for="topWheelInput">Top Wheel (0–100):<span class="value-display" id="topWheelValue">0</span></label>
+        <input type="range" id="topWheelSlider" min="0" max="100" value="0" oninput="updateValue('topWheel')" onchange="sendMotorCommand()" />
+        <input type="number" id="topWheelNumber" min="0" max="100" value="0" style="display:none;" oninput="updateValue('topWheel')" onchange="sendMotorCommand()" />
+      </div>
+      <div class="motor-group">
+        <label for="bottomWheelInput">Bottom Wheel (0–100):<span class="value-display" id="bottomWheelValue">0</span></label>
+        <input type="range" id="bottomWheelSlider" min="0" max="100" value="0" oninput="updateValue('bottomWheel')" onchange="sendMotorCommand()" />
+        <input type="number" id="bottomWheelNumber" min="0" max="100" value="0" style="display:none;" oninput="updateValue('bottomWheel')" onchange="sendMotorCommand()" />
+      </div>
+      <button onclick="clearMonitor()">Clear Monitor</button>
+    </div>
+
+    <!-- Middle: Stepper Motor Controls -->
+    <div class="stepper-panel motor-panel">
+      <h2>Stepper Motor Controls</h2>
+      
+      <div style="text-align: left; margin-bottom: 20px;">
+        <label style="display: flex; align-items: center; gap: 10px;">
+          <span>Motor Enable:</span>
+          <label class="switch">
+            <input type="checkbox" id="enableToggle" onchange="toggleStepperEnable()">
+            <span class="slider"></span>
+          </label>
+        </label>
+      </div>
+
+      <div class="gauge">
+        <div class="gauge-bg"></div>
+        <div class="needle" id="needle"></div>
+      </div>
+
+      <div class="angle-display" id="display">90°</div>
+
+      <div class="labels">
+        <span>0°</span>
+        <span>90°</span>
+        <span>180°</span>
+      </div>
+
+      <input type="range" id="slider" class="dial-slider" min="0" max="180" value="90">
+
+      <button onclick="homeStepper()" id="homeBtn" disabled>Home Stepper</button>
+
+      <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #444;">
+        <h3 style="text-align: center; font-size: 16px; margin-bottom: 15px;">Step Testing Tool</h3>
+        
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; margin-bottom: 5px;">Direction:</label>
+          <label class="switch">
+            <input type="checkbox" id="dirToggle" onchange="updateDirectionDisplay()">
+            <span class="slider"></span>
+          </label>
+          <span id="dirDisplay" style="margin-left: 10px; font-weight: bold;">CW</span>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; margin-bottom: 5px;">Number of Steps:</label>
+          <input type="number" id="stepCount" min="1" max="10000" value="100" 
+                style="width: 100%; padding: 8px; background-color: #222; border: 1px solid #555; 
+                        border-radius: 5px; color: #00ff00; font-size: 16px;">
+        </div>
+        
+        <button onclick="sendStepCommand()" id="stepBtn" disabled 
+                style="background-color: #444;">Move Steps</button>
+      </div>
+    </div>
+
+    <!-- Right: Monitor -->
+    <div class="monitor-panel">
+      <div class="monitor" id="monitor">
+        <div style="color: #666; font-style: italic;">Arduino communication will appear here...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">Control pitch, angle, and wheel speeds via web interface</div>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <script src="{{ url_for('static', filename='js/controller.js') }}"></script>
+</body>
+</html>

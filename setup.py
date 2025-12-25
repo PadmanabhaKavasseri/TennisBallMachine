@@ -1,4 +1,6 @@
 from setuptools import find_packages, setup
+import os
+from glob import glob
 
 package_name = 'flask_ros_node'
 
@@ -10,12 +12,20 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        # Add templates
+        (os.path.join('share', package_name, 'templates'), 
+            glob('flask_ros_node/templates/*.html')),
+        # Add static files
+        (os.path.join('share', package_name, 'static/css'), 
+            glob('flask_ros_node/static/css/*.css')),
+        (os.path.join('share', package_name, 'static/js'), 
+            glob('flask_ros_node/static/js/*.js')),
     ],
-    install_requires=['setuptools'],
+    install_requires=['setuptools', 'flask', 'flask-socketio'],
     zip_safe=True,
     maintainer='ubuntu',
     maintainer_email='ubuntu@todo.todo',
-    description='TODO: Package description',
+    description='ROS2 Flask Web Control Node',
     license='TODO: License declaration',
     extras_require={
         'test': [
