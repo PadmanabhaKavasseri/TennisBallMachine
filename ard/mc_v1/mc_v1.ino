@@ -27,6 +27,9 @@ const int ACCELERATION = 800;
 const int HOMING_SPEED = 800;
 
 bool homingComplete = false;
+long curSteps = 0; 
+const long MIN_POS = 0; 
+const long MAX_POS = 1680;
 
 void setup() {
   Serial.begin(9600);
@@ -187,6 +190,7 @@ void handleStepper(String command, String msgId) {
     }
     
     Serial.println("Limit pressed! Backing off...");
+    curSteps = 0;
     delay(200);
     
     digitalWrite(DIR_PIN, CW);  // Back away from limit
@@ -196,7 +200,7 @@ void handleStepper(String command, String msgId) {
       digitalWrite(STEP_PIN, LOW);
       delayMicroseconds(500);
     }
-    
+    curSteps = 840;
     Serial.println("✅ Homing complete! [" + msgId + "]");
     homingComplete = true;
     stepper.setCurrentPosition(0);
@@ -212,23 +216,41 @@ void handleStepper(String command, String msgId) {
     int secondUnderscore = command.indexOf('_', firstUnderscore + 1);
     
     String direction = command.substring(firstUnderscore + 1, secondUnderscore);
-    int steps = command.substring(secondUnderscore + 1).toInt();
+    long requestedSteps = command.substring(secondUnderscore + 1).toInt();
+    long allowedSteps = requestedSteps;
     
-    Serial.println("Moving " + String(steps) + " steps " + direction + " [" + msgId + "]");
+    // Serial.println("Moving " + String(steps) + " steps " + direction + " [" + msgId + "]");
     
     if (direction == "CW") {
+      if (curSteps + requestedSteps > MAX_POS) { 
+        allowedSteps = MAX_POS - curSteps; 
+      }
       digitalWrite(DIR_PIN, CW);
     } else {
+      if (curSteps - requestedSteps < MIN_POS) { 
+        allowedSteps = curSteps - MIN_POS; 
+      }
       digitalWrite(DIR_PIN, CCW);
     }
+    Serial.println("Moving " + String(allowedSteps) + " steps " + direction + 
+        " (requested " + requestedSteps + ") [" + msgId + "]");
     
-    for (int i = 0; i < steps; i++) {
+    for (int i = 0; i < allowedSteps; i++) {
       digitalWrite(STEP_PIN, HIGH);
       delayMicroseconds(500);
       digitalWrite(STEP_PIN, LOW);
       delayMicroseconds(500);
+
+      // Update position 
+      if (direction == "CW"){
+        curSteps++;
+      }  
+      else {
+        curSteps--;
+      }
     }
     
+    Serial.println("Position now: " + String(curSteps));
     Serial.println("✅ Move complete [" + msgId + "]");
     return;
   }

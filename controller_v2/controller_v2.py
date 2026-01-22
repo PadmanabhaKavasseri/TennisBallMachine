@@ -67,7 +67,7 @@ def arduino_monitor():
 def index():
     return render_template('controller.html')
 
-@app.route('/styles.css')
+@app.route('/css/styles.css')
 def styles():
     return render_template('styles.css'), 200, {'Content-Type': 'text/css'}
 

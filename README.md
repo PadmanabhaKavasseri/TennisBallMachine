@@ -20,7 +20,7 @@ compile:
 arduino-cli compile --fqbn arduino:avr:mega mc_v1.ino
 
 flash:
-arduino-cli upload -p /dev/cu.usbmodem14101 --fqbn arduino:avr:mega mc_v1.ino
+arduino-cli upload -p /dev/cu.usbmodem14401 --fqbn arduino:avr:mega mc_v1.ino
 
 arduino-cli lib install Servo
 
