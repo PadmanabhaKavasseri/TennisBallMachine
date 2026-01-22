@@ -15,6 +15,26 @@
     <!-- Left: Motor Controls -->
     <div class="motor-panel">
       <h2>Motor Controls</h2>
+
+      <div class="mode-control-section">
+        <h3>Control Mode</h3>
+        <div class="mode-toggle">
+          <label class="mode-option">
+            <input type="radio" name="systemMode" value="manual" checked onchange="switchMode()">
+            <span class="mode-label">Manual</span>
+          </label>
+          <label class="mode-option">
+            <input type="radio" name="systemMode" value="auto" onchange="switchMode()">
+            <span class="mode-label">Auto</span>
+          </label>
+        </div>
+        <div class="mode-status" id="modeStatus">
+          <span id="currentModeText">Manual Mode Active</span>
+          <div id="autoTrackingStatus" style="display: none;">
+            <small id="trackingInfo">Waiting for person detection...</small>
+          </div>
+        </div>
+      </div>
       
       <div class="control-mode-toggle">
         <label>

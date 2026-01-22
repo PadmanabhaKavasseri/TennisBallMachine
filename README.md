@@ -28,3 +28,23 @@ arduino-cli lib install Servo
 main code now is in controller_v2
 cd controlelr_v2
 python controller_v2.py
+
+
+RPI Setup
+1. Create Venv
+```
+python3 -m venv .venv
+source .venv/bin/activate
+pip install flask flask-socketio pyserial numpy PyYaml
+```
+
+
+Run Standalone without ros
+```
+python controller_v2.py
+```
+
+Run ros2 node 
+```
+python ros2_controller.py
+```

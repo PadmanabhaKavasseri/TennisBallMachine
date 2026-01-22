@@ -11,6 +11,7 @@ const gauge = document.querySelector('.gauge');
 let messageCount = 0;
 let currentMode = 'slider';
 let isDragging = false;
+let systemMode = 'manual';
 
 function getMotorValue(motor) {
   if (currentMode === 'slider') {
@@ -31,6 +32,41 @@ function updateValue(motor) {
     document.getElementById(motor + 'Slider').value = value;
   }
 }
+
+function switchMode() {
+  const newMode = document.querySelector('input[name="systemMode"]:checked').value;
+  
+  // Send mode change to server
+  socket.emit('set_mode', { mode: newMode });
+  
+  // Update UI immediately for responsiveness
+  updateModeUI(newMode);
+}
+
+function updateModeUI(mode) {
+  systemMode = mode;
+  const currentModeText = document.getElementById('currentModeText');
+  const autoTrackingStatus = document.getElementById('autoTrackingStatus');
+  const stepperPanel = document.querySelector('.stepper-panel');
+  
+  if (mode === 'manual') {
+    currentModeText.textContent = 'Manual Mode Active';
+    currentModeText.style.color = '#00ff00';
+    autoTrackingStatus.style.display = 'none';
+    
+    // Enable stepper panel
+    stepperPanel.classList.remove('disabled');
+    
+  } else if (mode === 'auto') {
+    currentModeText.textContent = 'Auto Mode Active';
+    currentModeText.style.color = '#ff6600';
+    autoTrackingStatus.style.display = 'block';
+    
+    // Disable entire stepper panel
+    stepperPanel.classList.add('disabled');
+  }
+}
+
 
 function toggleControlMode() {
   const mode = document.querySelector('input[name="controlMode"]:checked').value;
@@ -68,6 +104,12 @@ socket.on('status', function(data) {
     statusDiv.className = 'status disconnected';
     homeBtn.disabled = true;
   }
+
+  // Update mode if provided
+  if (data.mode) {
+    document.querySelector(`input[value="${data.mode}"]`).checked = true;
+    updateModeUI(data.mode);
+  }
 });
 
 socket.on('arduino_message', function(data) {
@@ -81,6 +123,32 @@ socket.on('message_sent', function(data) {
 socket.on('error', function(data) {
   addMessage('Error: ' + data.message, new Date().toLocaleTimeString(), 'error-text');
 });
+
+socket.on('mode_changed', function(data) {
+  // Update the radio button to match server state
+  document.querySelector(`input[value="${data.mode}"]`).checked = true;
+  
+  // Update UI
+  updateModeUI(data.mode);
+  
+  const message = `Mode changed to: ${data.mode}`;
+  addMessage(message, data.timestamp, 'sent-text');
+});
+
+socket.on('tracking_update', function(data) {
+  if (systemMode === 'auto') {
+    const trackingInfo = document.getElementById('trackingInfo');
+    
+    if (data.person_detected) {
+      trackingInfo.textContent = `Tracking person at (${data.x}, ${data.y}) - Stepper adjusting`;
+      trackingInfo.style.color = '#00ff00';
+    } else {
+      trackingInfo.textContent = 'No person detected - Stepper idle';
+      trackingInfo.style.color = '#ff6600';
+    }
+  }
+});
+
 
 function addMessage(message, timestamp, className) {
   if (messageCount === 0) monitor.innerHTML = '';
