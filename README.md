@@ -48,3 +48,12 @@ Run ros2 node
 ```
 python ros2_controller.py
 ```
+
+
+
+
+ROS Arduino Node Controller
+
+colcon build --packages-select tennis_ball_machine
+source install/setup.bash
+ros2 run tennis_ball_machine arduino_controller_node

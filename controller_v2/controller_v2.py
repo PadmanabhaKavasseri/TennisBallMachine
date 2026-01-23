@@ -140,6 +140,30 @@ def handle_send_message(data):
     else:
         emit('error', {'message': 'Arduino not connected or empty message'})
 
+@socketio.on('auto_stepper_command')
+def handle_auto_stepper_command(data):
+    """Handle automatic stepper commands from ROS2 node"""
+    message = data.get('message', '').strip()
+    
+    if message and arduino and arduino.is_open and current_mode == "auto":
+        try:
+            print(f"AUTO: Sending to Arduino: {message}")
+            arduino.write((message + '\n').encode())
+            arduino.flush()
+            
+            # Broadcast to web clients for monitoring
+            socketio.emit('arduino_auto_command', {
+                'message': f"AUTO: {data.get('direction')} {data.get('steps')} steps",
+                'timestamp': data.get('timestamp'),
+                'raw_command': message
+            })
+            
+        except Exception as e:
+            print(f"AUTO: Send error: {e}")
+    else:
+        print(f"AUTO: Command blocked (mode={current_mode}, arduino_connected={arduino and arduino.is_open})")
+
+
 @socketio.on('disconnect')
 def handle_disconnect():
     print("Web client disconnected")
