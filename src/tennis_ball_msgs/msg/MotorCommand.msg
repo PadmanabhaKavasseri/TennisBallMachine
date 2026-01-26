@@ -1,4 +1,4 @@
-# Motor identification  
+# Motor identification
 string motor              # "stepper", "top_wheel", "bottom_wheel", "linear_actuator"
 
 # Command type

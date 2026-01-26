@@ -57,3 +57,31 @@ ROS Arduino Node Controller
 colcon build --packages-select tennis_ball_machine
 source install/setup.bash
 ros2 run tennis_ball_machine arduino_controller_node
+
+
+
+colcon build --packages-select tennis_ball_msgs
+colcon build --packages-select tennis_ball_machine
+colcon build --packages-select tennis_ball_msgs tennis_ball_machine
+source install/setup.bash
+
+# Run Arduino controller (Terminal 1)
+ros2 run tennis_ball_machine ard_controller_node
+
+# Run person tracker (Terminal 2)
+ros2 run tennis_ball_machine person_tracker_node
+
+
+ros2 topic pub --once /motor/command tennis_ball_msgs/MotorCommand '{motor: "stepper", command: "home", value: 0.0, direction: "", speed: 0.0}'
+
+
+
+
+ros2 interface show tennis_ball_msgs/msg/MotorCommand
+
+
+
+
+ros2 topic pub --once /motor/command tennis_ball_msgs/MotorCommand '{motor: "stepper", command: "move_steps", value: 100.0, direction: "cw", speed: 0.0}'
+
+time ros2 topic pub --once /motor/command tennis_ball_msgs/MotorCommand '{motor: "stepper", command: "move_steps", value: 100.0, direction: "cw", speed: 0.0}'

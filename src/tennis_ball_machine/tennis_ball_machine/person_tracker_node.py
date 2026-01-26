@@ -6,6 +6,8 @@ from vision_msgs.msg import Detection2DArray
 from std_msgs.msg import String
 import time
 
+from tennis_ball_msgs.msg import MotorCommand
+
 class PersonTrackerNode(Node):
     def __init__(self):
         super().__init__('person_tracker')
@@ -19,17 +21,13 @@ class PersonTrackerNode(Node):
         )
         
         # Publish Arduino commands
-        self.arduino_command_publisher = self.create_publisher(
-            String,
-            '/arduino/raw_command',
-            10
-        )
+        self.motor_command_publisher = self.create_publisher(MotorCommand, '/motor/command', 10)
         
         # Tracking parameters
         self.camera_width = 1280
         self.camera_height = 720
         self.last_move_time = 0
-        self.move_cooldown = 2.0  # 2 seconds between moves
+        self.move_cooldown = 1.0  # 2 seconds between moves
         self.steps_per_move = 100  # Steps to move each time
         
         # Frame zones
@@ -103,18 +101,14 @@ class PersonTrackerNode(Node):
         self.last_move_time = current_time
     
     def send_stepper_command(self, direction, steps):
-        """Send stepper command to Arduino"""
-        try:
-            command = f"STEPPER=STEP_{direction}_{steps}"
-            
-            cmd_msg = String()
-            cmd_msg.data = command
-            self.arduino_command_publisher.publish(cmd_msg)
-            
-            self.get_logger().info(f'📤 Sent command: {command}')
-            
-        except Exception as e:
-            self.get_logger().error(f'❌ Failed to send command: {e}')
+        cmd = MotorCommand()
+        cmd.motor = "stepper"
+        cmd.command = "move_steps"
+        cmd.value = float(steps)
+        cmd.direction = direction.lower()  # "cw" or "ccw"
+        cmd.speed = 0.0
+        
+        self.motor_command_publisher.publish(cmd)
 
 def main():
     rclpy.init()
