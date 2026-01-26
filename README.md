@@ -68,8 +68,13 @@ source install/setup.bash
 # Run Arduino controller (Terminal 1)
 ros2 run tennis_ball_machine ard_controller_node
 
-# Run person tracker (Terminal 2)
+# T2 Manager
+ros2 run tennis_ball_machine mode_manager_node
+
+# Run person tracker (Terminal 3)
 ros2 run tennis_ball_machine person_tracker_node
+
+
 
 
 ros2 topic pub --once /motor/command tennis_ball_msgs/MotorCommand '{motor: "stepper", command: "home", value: 0.0, direction: "", speed: 0.0}'
@@ -85,3 +90,17 @@ ros2 interface show tennis_ball_msgs/msg/MotorCommand
 ros2 topic pub --once /motor/command tennis_ball_msgs/MotorCommand '{motor: "stepper", command: "move_steps", value: 100.0, direction: "cw", speed: 0.0}'
 
 time ros2 topic pub --once /motor/command tennis_ball_msgs/MotorCommand '{motor: "stepper", command: "move_steps", value: 100.0, direction: "cw", speed: 0.0}'
+
+
+ros2 topic pub --once /system/set_mode std_msgs/String "data: 'manual'"
+ros2 topic pub --once /system/set_mode std_msgs/String "data: 'auto'"
+
+
+
+ros2 topic pub --once /web/motor_command tennis_ball_msgs/MotorCommand '{motor: "stepper", command: "move_steps", value: 50.0, direction: "cw", speed: 0.0}'
+
+
+ros2 topic pub --once /auto/motor_command tennis_ball_msgs/MotorCommand '{motor: "stepper", command: "move_steps", value: 30.0, direction: "ccw", speed: 0.0}'
+
+
+

@@ -21,7 +21,11 @@ class PersonTrackerNode(Node):
         )
         
         # Publish Arduino commands
-        self.motor_command_publisher = self.create_publisher(MotorCommand, '/motor/command', 10)
+        self.motor_command_publisher = self.create_publisher(
+            MotorCommand, 
+            '/auto/motor_command', 
+            10
+        )
         
         # Tracking parameters
         self.camera_width = 1280

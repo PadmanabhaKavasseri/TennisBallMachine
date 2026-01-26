@@ -24,6 +24,7 @@ setup(
         'console_scripts': [
             'ard_controller_node = tennis_ball_machine.ard_controller_node:main', 
             'person_tracker_node = tennis_ball_machine.person_tracker_node:main',
+            'mode_manager_node = tennis_ball_machine.mode_manager_node:main',
         ],
     },
 )
